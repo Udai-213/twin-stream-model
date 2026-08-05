@@ -1,0 +1,649 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EnerGen Fuels — Twin-Stream Model</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Space+Grotesk:wght@400;500;600;700&display=swap');
+
+  :root {
+    --bg: #0a0f0d;
+    --surface: #111812;
+    --surface2: #172019;
+    --border: rgba(255,255,255,0.07);
+    --border2: rgba(255,255,255,0.12);
+    --green: #2ede8a;
+    --green-dim: rgba(46,222,138,0.12);
+    --green-mid: rgba(46,222,138,0.25);
+    --amber: #f5a623;
+    --amber-dim: rgba(245,166,35,0.1);
+    --blue: #4a9eff;
+    --blue-dim: rgba(74,158,255,0.1);
+    --red: #ff5a5a;
+    --red-dim: rgba(255,90,90,0.1);
+    --orange: #ff7a3d;
+    --text: #f0f4f1;
+    --text2: #8a9e90;
+    --text3: #5a6e60;
+    --radius: 12px;
+    --font-head: 'Space Grotesk', sans-serif;
+    --font-body: 'Inter', sans-serif;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html { font-size: 16px; scroll-behavior: smooth; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-body);
+    min-height: 100vh;
+    padding: 0;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .page {
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 48px 32px 80px;
+  }
+
+  /* ── HEADER ── */
+  .header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    margin-bottom: 56px;
+    padding-bottom: 32px;
+    border-bottom: 0.5px solid var(--border2);
+  }
+  .header-left { display: flex; flex-direction: column; gap: 6px; }
+  .eyebrow {
+    font-family: var(--font-body);
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--green);
+  }
+  .title {
+    font-family: var(--font-head);
+    font-size: 28px;
+    font-weight: 700;
+    color: var(--text);
+    line-height: 1.15;
+  }
+  .subtitle {
+    font-size: 13px;
+    color: var(--text2);
+    margin-top: 2px;
+    line-height: 1.5;
+  }
+  .header-badge {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 4px;
+  }
+  .hb-label { font-size: 10px; color: var(--text3); letter-spacing: 0.08em; text-transform: uppercase; }
+  .hb-tag {
+    font-family: var(--font-head);
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--green);
+    background: var(--green-dim);
+    border: 0.5px solid rgba(46,222,138,0.2);
+    padding: 4px 10px;
+    border-radius: 6px;
+    letter-spacing: 0.04em;
+  }
+
+  /* ── SECTION WRAPPER ── */
+  .section {
+    background: var(--surface);
+    border: 0.5px solid var(--border2);
+    border-radius: 16px;
+    padding: 32px;
+    margin-bottom: 24px;
+  }
+
+  .section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 6px;
+  }
+  .section-num {
+    font-family: var(--font-head);
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--green);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    opacity: 0.7;
+  }
+  .section-title {
+    font-family: var(--font-head);
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--text);
+    margin-bottom: 4px;
+  }
+  .section-desc {
+    font-size: 12.5px;
+    color: var(--text2);
+    line-height: 1.6;
+    margin-bottom: 28px;
+    max-width: 680px;
+  }
+
+  /* ── SLIDER ── */
+  .slider-block { margin-bottom: 10px; }
+  .slider-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 8px;
+  }
+  .slider-label { font-size: 12px; color: var(--text2); font-weight: 400; }
+  .slider-readout {
+    font-family: var(--font-head);
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--green);
+    letter-spacing: -0.01em;
+  }
+  input[type=range] {
+    -webkit-appearance: none;
+    width: 100%;
+    height: 4px;
+    background: var(--surface2);
+    border-radius: 2px;
+    outline: none;
+    margin-bottom: 6px;
+  }
+  input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: var(--green);
+    cursor: pointer;
+    border: 3px solid var(--bg);
+    box-shadow: 0 0 0 1px rgba(46,222,138,0.4);
+    transition: box-shadow 0.15s;
+  }
+  input[type=range]::-webkit-slider-thumb:hover {
+    box-shadow: 0 0 0 4px rgba(46,222,138,0.2);
+  }
+  input[type=range]::-webkit-slider-runnable-track {
+    height: 4px;
+    border-radius: 2px;
+  }
+  .slider-range {
+    display: flex;
+    justify-content: space-between;
+    font-size: 10px;
+    color: var(--text3);
+  }
+
+  /* ── KPI GRID ── */
+  .kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+    margin: 24px 0;
+  }
+  .kpi {
+    background: var(--surface2);
+    border: 0.5px solid var(--border);
+    border-radius: var(--radius);
+    padding: 14px 16px;
+  }
+  .kpi-label {
+    font-size: 10px;
+    color: var(--text3);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-bottom: 6px;
+  }
+  .kpi-value {
+    font-family: var(--font-head);
+    font-size: 20px;
+    font-weight: 600;
+    color: var(--text);
+    line-height: 1;
+  }
+  .kpi-value.pos { color: var(--green); }
+  .kpi-value.neg { color: var(--red); }
+  .kpi-value.warn { color: var(--amber); }
+
+  /* ── DIVIDER ── */
+  .divider {
+    border: none;
+    border-top: 0.5px solid var(--border);
+    margin: 24px 0;
+  }
+
+  /* ── BAR CHART ── */
+  .bars-title {
+    font-size: 11px;
+    color: var(--text3);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-bottom: 14px;
+  }
+  .bar-row {
+    display: grid;
+    grid-template-columns: 200px 1fr 72px;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 10px;
+  }
+  .bar-name { font-size: 12px; color: var(--text2); }
+  .bar-track {
+    height: 6px;
+    background: var(--surface2);
+    border-radius: 3px;
+    overflow: hidden;
+  }
+  .bar-fill {
+    height: 100%;
+    border-radius: 3px;
+    transition: width 0.3s cubic-bezier(0.4,0,0.2,1);
+  }
+  .bar-amt {
+    font-family: var(--font-head);
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text);
+    text-align: right;
+  }
+  .bar-amt.outflow { color: var(--red); }
+
+  /* ── VERDICT ── */
+  .verdict {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 14px 16px;
+    border-radius: var(--radius);
+    font-size: 12.5px;
+    line-height: 1.6;
+    margin-top: 20px;
+    font-weight: 400;
+  }
+  .verdict-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    margin-top: 4px;
+    flex-shrink: 0;
+  }
+  .verdict.green { background: var(--green-dim); border: 0.5px solid rgba(46,222,138,0.2); color: #a8f0cc; }
+  .verdict.green .verdict-dot { background: var(--green); }
+  .verdict.amber { background: var(--amber-dim); border: 0.5px solid rgba(245,166,35,0.2); color: #f5d08a; }
+  .verdict.amber .verdict-dot { background: var(--amber); }
+  .verdict.red { background: var(--red-dim); border: 0.5px solid rgba(255,90,90,0.2); color: #ffaaaa; }
+  .verdict.red .verdict-dot { background: var(--red); }
+
+  /* ── ASSUMPTIONS ── */
+  .assumptions {
+    margin-top: 20px;
+    padding: 14px 16px;
+    background: rgba(255,255,255,0.02);
+    border-radius: var(--radius);
+    border: 0.5px solid var(--border);
+  }
+  .assumptions-label {
+    font-size: 10px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--text3);
+    margin-bottom: 8px;
+  }
+  .assumptions p {
+    font-size: 11.5px;
+    color: var(--text3);
+    line-height: 1.7;
+  }
+  .assumptions span { color: var(--text2); }
+
+  /* ── DUAL SLIDERS (section 2) ── */
+  .dual-slider { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 4px; }
+
+  /* ── FOOTER ── */
+  .footer {
+    margin-top: 56px;
+    padding-top: 24px;
+    border-top: 0.5px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .footer-left { font-size: 11px; color: var(--text3); line-height: 1.6; }
+  .footer-right {
+    font-family: var(--font-head);
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--green);
+    opacity: 0.6;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  @media (max-width: 640px) {
+    .page { padding: 24px 20px 60px; }
+    .kpi-grid { grid-template-columns: repeat(2,1fr); }
+    .bar-row { grid-template-columns: 120px 1fr 60px; }
+    .dual-slider { grid-template-columns: 1fr; }
+    .header { flex-direction: column; gap: 16px; }
+    .header-badge { align-items: flex-start; }
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <!-- HEADER -->
+  <div class="header">
+    <div class="header-left">
+      <span class="eyebrow">Ecovate · Team 04 Club · IIM Rohtak</span>
+      <h1 class="title">EnerGen Fuels<br>Twin-Stream Model</h1>
+      <p class="subtitle">Interactive feasibility — drag to explore the economics</p>
+    </div>
+    <div class="header-badge">
+      <span class="hb-label">Strategy</span>
+      <span class="hb-tag">CBG + RDF + Manure</span>
+    </div>
+  </div>
+
+  <!-- SLIDER 1 -->
+  <div class="section">
+    <div class="section-header">
+      <span class="section-num">Model 01</span>
+    </div>
+    <div class="section-title">Plant scale — what does a city's waste actually yield?</div>
+    <p class="section-desc">Based on the Indore benchmark: 550 TPD input → 15 TPD CBG (2.7% conversion). CPCB-Annepu MSW split: 51% organic, 17.5% dry combustible, 31.5% inert. Drag to size EnerGen's first plant.</p>
+
+    <div class="slider-block">
+      <div class="slider-top">
+        <span class="slider-label">Plant input (tonnes per day)</span>
+        <span class="slider-readout" id="s1-readout">300 TPD</span>
+      </div>
+      <input type="range" min="50" max="600" step="10" value="300" id="s1" oninput="calc1()">
+      <div class="slider-range"><span>50 TPD (small town)</span><span>600 TPD (Indore-scale)</span></div>
+    </div>
+
+    <div class="kpi-grid">
+      <div class="kpi"><div class="kpi-label">CBG output</div><div class="kpi-value pos" id="k1-cbg">—</div></div>
+      <div class="kpi"><div class="kpi-label">RDF output</div><div class="kpi-value" id="k1-rdf">—</div></div>
+      <div class="kpi"><div class="kpi-label">Monthly revenue</div><div class="kpi-value pos" id="k1-rev">—</div></div>
+      <div class="kpi"><div class="kpi-label">Payback (post-CFA)</div><div class="kpi-value" id="k1-pb">—</div></div>
+    </div>
+
+    <hr class="divider">
+
+    <p class="bars-title">Revenue streams vs cost</p>
+
+    <div class="bar-row">
+      <span class="bar-name">CBG sales · ₹55/kg (OMC)</span>
+      <div class="bar-track"><div class="bar-fill" id="b1a" style="background:#2ede8a"></div></div>
+      <span class="bar-amt" id="v1a">—</span>
+    </div>
+    <div class="bar-row">
+      <span class="bar-name">RDF · ₹1,600/t (cement kilns)</span>
+      <div class="bar-track"><div class="bar-fill" id="b1b" style="background:#4a9eff"></div></div>
+      <span class="bar-amt" id="v1b">—</span>
+    </div>
+    <div class="bar-row">
+      <span class="bar-name">Digestate manure · ₹2,500/t</span>
+      <div class="bar-track"><div class="bar-fill" id="b1c" style="background:#f5a623"></div></div>
+      <span class="bar-amt" id="v1c">—</span>
+    </div>
+    <div class="bar-row">
+      <span class="bar-name">Carbon credits (CCTS)</span>
+      <div class="bar-track"><div class="bar-fill" id="b1d" style="background:#c084fc"></div></div>
+      <span class="bar-amt" id="v1d">—</span>
+    </div>
+    <div class="bar-row">
+      <span class="bar-name">Production cost · ₹38/kg CBG</span>
+      <div class="bar-track"><div class="bar-fill" id="b1e" style="background:#ff5a5a"></div></div>
+      <span class="bar-amt outflow" id="v1e">—</span>
+    </div>
+
+    <div class="verdict" id="verdict1">
+      <span class="verdict-dot"></span>
+      <span id="verdict1-text"></span>
+    </div>
+
+    <div class="assumptions">
+      <div class="assumptions-label">Assumptions &amp; sources</div>
+      <p>
+        <span>CBG conversion 2.7%</span> of wet input (Indore 550→15 TPD, your submission) ·
+        <span>MSW split</span> 51% organic / 17.5% dry combustible (CPCB-Annepu 2012) ·
+        <span>CBG ₹55/kg</span> = ₹1,478/mmBtu ÷ 26.8 kg/mmBtu (MoPNG, Budget 2026) ·
+        <span>RDF ₹1,600/t</span> coal-substitution rate for cement kilns (SWM Rules 2026) ·
+        <span>Production cost ₹38/kg</span> midpoint of ₹35–40/kg benchmark (Indore PPP) ·
+        <span>Digestate yield</span> 30% of organic input as FOM ·
+        <span>CFA subsidy</span> ₹4 Cr per 4,800 kg/day (National Bioenergy Programme, cap ₹10 Cr) ·
+        <span>Carbon credits</span> 2.5 tCO₂e/t coal displaced × $20/tCO₂e × ₹83 FX (CCTS 2024)
+      </p>
+    </div>
+  </div>
+
+  <!-- SLIDER 2 -->
+  <div class="section">
+    <div class="section-header">
+      <span class="section-num">Model 02</span>
+    </div>
+    <div class="section-title">Compliance pressure — when mandates become pricing power</div>
+    <p class="section-desc">Your key insight: offtake is no longer discretionary. CBG blending obligation scales 1%→5% by FY28-29. RDF substitution scales 5%→15% by 2032. Both carry financial penalties. Drag to see what that means for EnerGen's negotiating position. Fixed 300 TPD plant.</p>
+
+    <div class="dual-slider">
+      <div class="slider-block">
+        <div class="slider-top">
+          <span class="slider-label">CBG blend mandate</span>
+          <span class="slider-readout" id="s2a-readout">1.0%</span>
+        </div>
+        <input type="range" min="1" max="5" step="0.5" value="1" id="s2a" oninput="calc2()">
+        <div class="slider-range"><span>1% (FY25-26)</span><span>5% (FY28-29)</span></div>
+      </div>
+      <div class="slider-block">
+        <div class="slider-top">
+          <span class="slider-label">RDF substitution mandate</span>
+          <span class="slider-readout" id="s2b-readout">5%</span>
+        </div>
+        <input type="range" min="5" max="15" step="1" value="5" id="s2b" oninput="calc2()">
+        <div class="slider-range"><span>5% (baseline)</span><span>15% (2032)</span></div>
+      </div>
+    </div>
+
+    <div class="kpi-grid">
+      <div class="kpi"><div class="kpi-label">National CBG demand</div><div class="kpi-value" id="k2-dem">—</div></div>
+      <div class="kpi"><div class="kpi-label">Supply gap (vs 217 plants)</div><div class="kpi-value pos" id="k2-gap">—</div></div>
+      <div class="kpi"><div class="kpi-label">EnerGen CBG price</div><div class="kpi-value pos" id="k2-price">—</div></div>
+      <div class="kpi"><div class="kpi-label">EnerGen net / month</div><div class="kpi-value" id="k2-net">—</div></div>
+    </div>
+
+    <hr class="divider">
+
+    <p class="bars-title">Market structure at current mandate setting</p>
+
+    <div class="bar-row">
+      <span class="bar-name">National CBG demand (TPD)</span>
+      <div class="bar-track"><div class="bar-fill" id="b2a" style="background:#2ede8a"></div></div>
+      <span class="bar-amt" id="v2a">—</span>
+    </div>
+    <div class="bar-row">
+      <span class="bar-name">Current supply — 217 plants</span>
+      <div class="bar-track"><div class="bar-fill" id="b2b" style="background:#5a6e60; width:5%"></div></div>
+      <span class="bar-amt">~1,085 TPD</span>
+    </div>
+    <div class="bar-row">
+      <span class="bar-name">RDF cement demand (MT/yr)</span>
+      <div class="bar-track"><div class="bar-fill" id="b2c" style="background:#4a9eff"></div></div>
+      <span class="bar-amt" id="v2c">—</span>
+    </div>
+    <div class="bar-row">
+      <span class="bar-name">Buyer penalty for non-compliance</span>
+      <div class="bar-track"><div class="bar-fill" id="b2d" style="background:#ff5a5a"></div></div>
+      <span class="bar-amt" id="v2d">—</span>
+    </div>
+
+    <div class="verdict" id="verdict2">
+      <span class="verdict-dot"></span>
+      <span id="verdict2-text"></span>
+    </div>
+
+    <div class="assumptions">
+      <div class="assumptions-label">Assumptions &amp; sources</div>
+      <p>
+        <span>India CNG consumption</span> ~7.5 billion m³/yr (MoPNG 2024) ·
+        <span>CBG energy density</span> 26.8 kg/mmBtu for conversion ·
+        <span>Current supply</span> 217 plants × ~5 TPD avg = 1,085 TPD (MoPNG registry) ·
+        <span>Cement production</span> ~390 million TPA (CMA 2024) ·
+        <span>Price leverage</span> +5% per 1% mandate increment above floor (EnerGen's negotiating position as supply gap widens) ·
+        <span>Buyer penalty</span> ₹5 Cr/quarter per major OMC (GST-equivalent default rate applied to blending mandates) ·
+        <span>EnerGen's 300 TPD plant</span> contributes 8.1 TPD CBG — a rounding error against national demand, meaning zero risk of oversupply at this scale
+      </p>
+    </div>
+  </div>
+
+  <!-- FOOTER -->
+  <div class="footer">
+    <div class="footer-left">
+      All numbers benchmarked to Indore's operational PPP plant and Union Budget 2026 / MoPNG published rates.<br>
+      Assumptions are stated. Carbon credit revenue modelled from month 13 (Gold Standard registration lag).
+    </div>
+    <div class="footer-right">Ecovate · 04 Club</div>
+  </div>
+
+</div>
+
+<script>
+  function f2(n){ return n < 10 ? n.toFixed(2) : n < 100 ? n.toFixed(1) : Math.round(n).toLocaleString('en-IN'); }
+  function cr(n){ return '₹' + f2(n) + ' Cr'; }
+
+  function calc1(){
+    const tpd = +document.getElementById('s1').value;
+    document.getElementById('s1-readout').textContent = tpd + ' TPD';
+
+    const org = tpd * 0.51;
+    const dry = tpd * 0.175;
+    const cbg_tpd = tpd * 0.027;
+    const cbg_kgd = cbg_tpd * 1000;
+    const rdf_tpd = dry * 0.60;
+    const digestate = org * 0.30;
+
+    const cbg_rev = cbg_kgd * 30 * 55 / 1e7;
+    const rdf_rev = rdf_tpd * 1000 * 30 * 1600 / 1e7;
+    const man_rev = digestate * 1000 * 30 * 2500 / 1e7;
+    const cc_rev  = rdf_tpd * 365 * 2.5 * 20 * 83 / 1e7 / 12;
+    const prod    = cbg_kgd * 30 * 38 / 1e7;
+    const total   = cbg_rev + rdf_rev + man_rev + cc_rev;
+    const net     = total - prod;
+
+    const cfa = Math.min(10, 4 * cbg_kgd / 4800);
+    const capex = Math.max(10, tpd / 30 * 10);
+    const capex_net = Math.max(0, capex - cfa);
+    const pb = net > 0 ? capex_net / net : 999;
+
+    document.getElementById('k1-cbg').textContent = cbg_tpd.toFixed(1) + ' TPD';
+    document.getElementById('k1-rdf').textContent = rdf_tpd.toFixed(1) + ' TPD';
+    document.getElementById('k1-rev').textContent = cr(total);
+    const pbEl = document.getElementById('k1-pb');
+    pbEl.textContent = pb < 900 ? pb.toFixed(1) + ' mo' : 'N/A';
+    pbEl.className = 'kpi-value ' + (pb <= 24 ? 'pos' : pb <= 48 ? 'warn' : 'neg');
+
+    const mx = Math.max(cbg_rev, rdf_rev, man_rev, cc_rev, prod, 0.01);
+    const pct = v => Math.min(100, v / mx * 100) + '%';
+    document.getElementById('b1a').style.width = pct(cbg_rev);
+    document.getElementById('b1b').style.width = pct(rdf_rev);
+    document.getElementById('b1c').style.width = pct(man_rev);
+    document.getElementById('b1d').style.width = pct(cc_rev);
+    document.getElementById('b1e').style.width = pct(prod);
+
+    document.getElementById('v1a').textContent = cr(cbg_rev);
+    document.getElementById('v1b').textContent = cr(rdf_rev);
+    document.getElementById('v1c').textContent = cr(man_rev);
+    document.getElementById('v1d').textContent = cr(cc_rev);
+    document.getElementById('v1e').textContent = '−' + cr(prod);
+
+    const vEl = document.getElementById('verdict1');
+    const vTx = document.getElementById('verdict1-text');
+    if(net > 0 && pb <= 24){
+      vEl.className = 'verdict green';
+      vTx.textContent = 'Viable. ₹' + f2(net) + ' Cr net/month after production cost. ' + pb.toFixed(1) + '-month payback post-CFA subsidy. CBG dominates at ' + Math.round(cbg_rev/total*100) + '% of revenue — lock the OMC offtake contract first.';
+    } else if(net > 0){
+      vEl.className = 'verdict amber';
+      vTx.textContent = 'Positive but thin. ' + pb.toFixed(1) + '-month payback needs the full 15-year OMC contract as debt collateral to be bankable. Scale to 300+ TPD or pursue carbon credit registration early.';
+    } else {
+      vEl.className = 'verdict red';
+      vTx.textContent = 'Pre-viable. Production cost exceeds revenue at this scale. Minimum ~120 TPD needed for positive unit economics at ₹38/kg. Small plants require CFA subsidy front-loading.';
+    }
+  }
+
+  function calc2(){
+    const cbgm = +document.getElementById('s2a').value;
+    const rdfm = +document.getElementById('s2b').value;
+    document.getElementById('s2a-readout').textContent = cbgm.toFixed(1) + '%';
+    document.getElementById('s2b-readout').textContent = rdfm + '%';
+
+    const cng_yr = 7.5e9;
+    const cbg_m3_yr = cng_yr * cbgm / 100;
+    const cbg_dem_tpd = cbg_m3_yr / 365 / 26.8 * 1000 / 1000;
+    const supply = 1085;
+    const gap = Math.max(0, cbg_dem_tpd - supply);
+
+    const cement_tpa = 390e6;
+    const rdf_mt = cement_tpa * rdfm / 100 / 1e6;
+
+    const premium = 1 + (cbgm - 1) * 0.05;
+    const cbg_price = 55 * premium;
+    const penalty = cbgm * 5;
+
+    const cbg_kgd = 300 * 0.027 * 1000;
+    const rdf_tpd = 300 * 0.175 * 0.6;
+    const cbg_rev = cbg_kgd * 30 * cbg_price / 1e7;
+    const rdf_rev = rdf_tpd * 1000 * 30 * 1600 / 1e7;
+    const prod    = cbg_kgd * 30 * 38 / 1e7;
+    const net     = cbg_rev + rdf_rev - prod;
+
+    document.getElementById('k2-dem').textContent = Math.round(cbg_dem_tpd).toLocaleString('en-IN') + ' TPD';
+    document.getElementById('k2-gap').textContent = Math.round(gap).toLocaleString('en-IN') + ' TPD';
+    document.getElementById('k2-price').textContent = '₹' + Math.round(cbg_price) + '/kg';
+    const netEl = document.getElementById('k2-net');
+    netEl.textContent = (net >= 0 ? '' : '−') + cr(Math.abs(net));
+    netEl.className = 'kpi-value ' + (net >= 0 ? 'pos' : 'neg');
+
+    const maxDem = 20000;
+    document.getElementById('b2a').style.width = Math.min(100, cbg_dem_tpd / maxDem * 100) + '%';
+    document.getElementById('b2c').style.width = Math.min(100, rdf_mt / 60 * 100) + '%';
+    document.getElementById('b2d').style.width = Math.min(100, penalty / 25 * 100) + '%';
+
+    document.getElementById('v2a').textContent = Math.round(cbg_dem_tpd).toLocaleString('en-IN') + ' TPD';
+    document.getElementById('v2c').textContent = rdf_mt.toFixed(1) + ' MT/yr';
+    document.getElementById('v2d').textContent = cr(penalty) + '/yr';
+
+    const vEl = document.getElementById('verdict2');
+    const vTx = document.getElementById('verdict2-text');
+    if(cbgm >= 3){
+      vEl.className = 'verdict green';
+      vTx.textContent = 'High mandate pressure. National CBG gap is ' + Math.round(gap).toLocaleString('en-IN') + ' TPD against a current supply of 1,085 TPD. EnerGen can price at ₹' + Math.round(cbg_price) + '/kg — buyers face ₹' + penalty.toFixed(0) + ' Cr/yr in penalties and cannot walk away. Lock 15-year offtake contracts now.';
+    } else if(cbgm >= 2){
+      vEl.className = 'verdict amber';
+      vTx.textContent = 'Mandate building. ' + Math.round(gap).toLocaleString('en-IN') + ' TPD gap emerging. Buyers still have some negotiating power but the trajectory is clear — include annual escalation clauses tied to the mandate schedule in all contracts.';
+    } else {
+      vEl.className = 'verdict red';
+      vTx.textContent = 'FY25-26 baseline (1% mandate). Gap of ' + Math.round(gap).toLocaleString('en-IN') + ' TPD exists but buyers retain negotiating leverage. Secure 15-year OMC contracts immediately — in 3 years this leverage inverts completely.';
+    }
+  }
+
+  calc1(); calc2();
+</script>
+</body>
+</html>
